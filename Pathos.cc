@@ -1,518 +1,351 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <unordered_map>
-#include <sstream>
+#include "Pathos.h"
+#include "Nodes.h"
 using namespace std;
 
-//PARSING PATHOS TREES.
-
-class Node;
-class ContainerNode;
-class TextNode;
-
-class Node {
-  protected:
-    ContainerNode* parent;
-
-  public:
-    ContainerNode* consummate ();
-    
-    template<class T>
-    T considerAs() {
-      T* considered = dynamic_cast<T*>(this);
-      if (considered == NULL) {
-        throw 1;
-      }
-      else {
-        return *considered;
-      }
-    }
-
-    virtual string toString() const {
-      ostringstream rtn;
-      rtn << "{NODE parent@" << parent << "}";
-      return rtn.str();
-    };
-
-    virtual bool isContainer() const {
-      return false;
-    }
-};
-
-class ContainerNode : public Node {
-  public:
-    vector<Node*> parts;
-
-    ContainerNode (ContainerNode* parent) {
-      this->parent = parent;
-    }
-
-    ContainerNode () {
-    }
-    
-    void addPart (Node* node) {
-      parts.push_back(node);
-    }
-    
-    string toString() const {
-      string rtn = "[";
-      int len = parts.size();
-      for (int i = 0; i < len; i += 1) {
-        rtn += parts[i]->toString();
-        if (i != len - 1) rtn += ' ';
-      }
-      rtn += "]";
-      return rtn;
-    }
-
-    bool isContainer() const {
-      return true;
-    }
-};
-
-class TextNode : public Node {
-  public:
-    string value;
-    TextNode (ContainerNode* parent, string value) {
-      this->parent = parent;
-      this->value = value;
-    }
-
-    string toString() const {
-      return value;
-    }
-
-    bool isContainer() const {
-      return false;
-    }
-};
-
-ContainerNode* Node::consummate() {
-  parent->addPart(this);
-  return parent;
+//PathosAtom
+int PathosAtom::getType() const {
+  return type;
 }
 
-
-ContainerNode parse(string pathos) {
-  int len = pathos.length();
-  ContainerNode* current = new ContainerNode();
-  string last = "";
-  for (int i = 0; i < len; i += 1) {
-    if (pathos[i] == '(') {
-      current = new ContainerNode(current);
-    }
-    else if (pathos[i] == ')') {
-      if (last.length() > 0) {
-        current->addPart(new TextNode(current, last));
-        last = "";
-      }
-      current = current->consummate();
-    }
-    else if (pathos[i] == ' ') {
-      if (last.length() > 0) {
-        current->addPart(new TextNode(current, last));
-        last = "";
-      }
-    }
-    else {
-      last += pathos[i];
-    }
-  }
-  return *(dynamic_cast<ContainerNode*>(current->parts[0]));
+string PathosAtom::toString() {
+  stringstream out;
+  out << "ATOM TYPE " << type << " AT " << this;
+  return out.str();
 }
 
-//EVALUATING PATHOS TREES.
-//TODO: Complete rewrite of the closure system. It's all out of whack.
+//PathosInt
+PathosInt::PathosInt(int value) {
+  this->value = value;
+  this->type = 0;
+}
+int PathosInt::getValue() const {
+  return value;
+}
+string PathosInt::toString() {
+  stringstream out;
+  out << value;
+  return out.str();
+}
 
-class PathosAtom {
-  protected:
-    int type;
-    
-  public:
-    int getType() const {
-      return type;
-    }
-    
-    virtual string toString() {
-      stringstream out;
-      out << "ATOM TYPE " << type << " AT " << this;
-      return out.str();
-    }
-};
+//PathosString
+PathosString::PathosString(string value) {
+  this->value = value;
+  this->type = 1;
+}
+string PathosString::getValue() const {
+  return value;
+}
+string PathosString::toString() {
+  return value;
+}
 
-PathosAtom& evaluate(const Node&, const unordered_map<string, PathosAtom*>*);
+//PathosBoolean
+PathosBoolean::PathosBoolean(bool value) {
+  this->value = value;
+  this->type = 2;
+}
 
-class PathosInt : public PathosAtom {
-  private:
-    int value;
+bool PathosBoolean::getValue() const {
+  return value;
+}
 
-  public:
-    PathosInt(int value) {
-      this->value = value;
-      this->type = 0;
-    }
-    
-    int getValue() const {
-      return value;
-    }
+string PathosBoolean::toString() {
+  return (value ? "true" : "false");
+}
 
-    string toString() {
-      stringstream out;
-      out << value;
-      return out.str();
-    }
-};
+//PathosList
+PathosList::PathosList(vector<PathosAtom*> value) {
+  this->value = value;
+  this->size = value.size();
+}
 
-class PathosString : public PathosAtom {
-  private:
-    string value;
-  
-  public:
-    PathosString(string value) {
-      this->value = value;
-      this->type = 1;
-    }
+vector<PathosAtom*> PathosList::getValue() const {
+  return value;
+}
 
-    string getValue() const {
-      return value;
-    }
+PathosAtom* PathosList::getCar() {
+  return value[0];
+}
 
-    string toString() {
-      return value;
-    }
-};
-
-class PathosBoolean : public PathosAtom {
-  private:
-    bool value;
-  public:
-    PathosBoolean(bool value) {
-      this->value = value;
-      this->type = 2;
-    }
-
-    bool getValue() const {
-      return value;
-    }
-
-    string toString() const {
-      return (value ? "true" : "false");
-    }
-};
-
-class PathosList : public PathosAtom {
-  private:
-    vector<PathosAtom*> value;
-    int size;
-
-  public:
-    PathosList(vector<PathosAtom*> value) {
-      this->value = value;
-      this->size = value.size();
-    }
-
-    vector<PathosAtom*> getValue() const {
-      return value;
-    }
-
-    PathosAtom& getCar() {
-      return *value[0];
-    }
-
-    PathosAtom& getCdr() {
-      vector<PathosAtom*> rtn;
-      for (int i = 1; i < size; i += 1) {
-        rtn.push_back(value[i]);
-      }
-      return *(new PathosList(rtn));
-    }
-
-    string toString() {
-      stringstream out;
-      out << '[';
-      for (int i = 0; i < size; i += 1) {
-        out << value[i]->toString();
-        if (i != size - 1) out << ", ";
-      }
-      out << ']';
-      return out.str();
-    }
-};
-
-class PathosUninterpreted : public PathosAtom {
-  private:
-    Node* value;
-    const unordered_map<string, PathosAtom*>* closure;
-  public:
-    PathosUninterpreted () {
-      this->value = 0;
-      this->closure = 0;
-    }
-
-    PathosUninterpreted(const Node& value, const unordered_map<string, PathosAtom*>* closure) {
-      this->value = &const_cast<Node&>(value);
-      this->closure = closure;
-      for (unordered_map<string, PathosAtom*>::const_iterator x = this->closure->begin(); x != this->closure->end(); ++x) {
-        cout << "An element of the new closure is (" << x->first << ", " << x->second->toString() << ")\n";
-      }
-    }
-
-    Node& getValue() const {
-      return *value;
-    }
-
-    const unordered_map<string, PathosAtom*>* getClosure() const {
-      return closure;
-    }
-
-    PathosAtom& eval(const unordered_map<string, PathosAtom*>& variables) const {
-      cout << "Beginning uninterpreted evaluation.\n";
-      const unordered_map<string, PathosAtom*>* random = closure;
-      cout << closure << endl;
-      unordered_map<string, PathosAtom*>::const_iterator iterator = closure->begin();
-      while (iterator != closure->end()) {
-        cout << "An element of the closure is " << iterator->first << '\n';
-        ++iterator;
-      }
-      unordered_map<string, PathosAtom*> ultimateVariables = *(new unordered_map<string, PathosAtom*>());
-      for (unordered_map<string, PathosAtom*>::const_iterator x = closure->begin(); x != closure->end(); ++x) {
-        ultimateVariables[x->first] = x->second;
-        cout << "Adding closure variable " << x->first << " to ultimate variables.\n";
-      }
-      cout << "Constructed ultimate variables.\n";
-      for (unordered_map<string, PathosAtom*>::const_iterator x = variables.begin(); x != variables.end(); ++x) {
-        ultimateVariables[x->first] = x->second;
-        cout << "Meshing local variable " << x->first << " with ultimate variables.\n";
-      }
-      cout << "Done meshing vars.\n";
-      return evaluate(*value, &ultimateVariables);
-    }
-
-    PathosAtom& eval() const {
-      return evaluate(*value, closure);
-    }
-};
-
-class PathosLambda : public PathosAtom {
-  private:
-    int id;
-    PathosUninterpreted value;
-    vector<string> params;
-    int size;
-    
-  public:
-    PathosLambda () {
-      this->type = 7;
-    }
-
-    PathosLambda(const PathosUninterpreted& value, const vector<string>& params) {
-      static int gid;
-      this->id = (gid += 1);
-      cout << "Constructed lambda with id " << this->id << ".\n";
-      this->value = value;
-      this->params = params;
-      this->size = params.size();
-      this->type = 7;
-    }
-
-    PathosUninterpreted& getValue() {
-      return value;
-    }
-    
-    vector<string> getArgs() {
-      return params;
-    }
-
-    virtual PathosAtom& run(const vector<PathosUninterpreted>& args) {
-      cout << "Running a function.\n";
-      unordered_map<string, PathosAtom*> argMap;
-      for (int i = 0; i < size; i += 1) {
-        if (params[i][0] == '^') {
-          argMap[params[i]] = const_cast<PathosAtom*>(dynamic_cast<const PathosAtom*>(&args[i]));
-        }
-        else {
-          argMap[params[i]] = const_cast<PathosAtom*>(dynamic_cast<const PathosAtom*>(&args[i].eval()));
-        }
-      }
-      cout << "Done constructing argMap for function " << id << ".\n";
-      return value.eval(argMap);
-    }
-};
-
-namespace NativeFunctions {
-  PathosAtom& add(PathosAtom& a, PathosAtom& b) {
-    cout << "Doing addition.\n";
-    PathosInt& intA = dynamic_cast<PathosInt&>(a);
-    PathosInt& intB = dynamic_cast<PathosInt&>(b);
-    return *(new PathosInt(intA.getValue() + intB.getValue()));
+PathosAtom* PathosList::getCdr() {
+  vector<PathosAtom*> rtn;
+  for (int i = 1; i < size; i += 1) {
+    rtn.push_back(value[i]);
   }
-  PathosAtom& lambda(const PathosUninterpreted& args, const PathosUninterpreted& value) {
-    cout << "Making a lambda.\n";
-    ContainerNode& argNode = dynamic_cast<ContainerNode&>(args.getValue());
-    vector<Node*> paramNodes = argNode.parts;
-    int size = paramNodes.size();
-    vector<string> params;
-    for (int i = 0; i < size; i += 1) {
-      params.push_back(dynamic_cast<TextNode*>(paramNodes[i])->value);
-    }
-    return *(new PathosLambda(value, params));
+  return new PathosList(rtn);
+}
+
+string PathosList::toString() {
+  stringstream out;
+  out << '[';
+  for (int i = 0; i < size; i += 1) {
+    out << value[i]->toString();
+    if (i != size - 1) out << ", ";
   }
-  PathosAtom& car(const PathosUninterpreted& list) {
-    cout << "Carring.\n";
-    return dynamic_cast<PathosList&>(list.eval()).getCar();
+  out << ']';
+  return out.str();
+}
+
+//PathosUninterpreted
+
+unordered_map<string, PathosAtom*>* PathosUninterpreted::getClosure() {
+  return closure;
+}
+
+//PathosUninterpretedText
+PathosUninterpretedText::PathosUninterpretedText (string text, unordered_map<string, PathosAtom*>* variables) {
+  closure = variables;
+  value = text;
+}
+
+PathosAtom* PathosUninterpretedText::eval(unordered_map<string, PathosAtom*>* variables) {
+
+  if (value[0] == '\'') {
+    //Attempt to interpret as a string literal:
+    return new PathosString(value.substr(1, value.length()));
   }
-  PathosAtom& cdr(const PathosUninterpreted& list) {
-    cout << "Cdring.\n";
-    return dynamic_cast<PathosList&>(list.eval()).getCdr();
+  else if (value[0] == '#') {
+    //Attempt to interpret as a boolean literal:
+    return new PathosBoolean(value[1] == 't');
   }
-  PathosAtom& eval(const PathosUninterpreted& uninterpreted) {
-    cout << "Evaling.\n";
-    return dynamic_cast<PathosUninterpreted&>(uninterpreted.eval()).eval();
+  else if (value[0] == '-' || isdigit(value[0])) {
+    //Attempt to interpret as an int literal:
+    return new PathosInt(stoi(value));
   }
-  PathosAtom& quote(const PathosUninterpreted& list) {
-    cout << "Quoting.\n";
-    ContainerNode& listNode = dynamic_cast<ContainerNode&>(list.getValue());
-    vector<Node*> elementNodes = listNode.parts;
-    vector<PathosAtom*> elements;
-    int size = elementNodes.size();
-    for (int i = 0; i < size; i += 1) {
-      elements.push_back(&evaluate(*elementNodes[i], list.getClosure()));
-    }
-    return *(new PathosList(elements));
+  else if (variables->count(value) > 0) {
+    //Attempt to dereference from the local variables:
+    return variables->at(value);
   }
-  PathosAtom& equals(const PathosUninterpreted& a, const PathosUninterpreted& b) {
-    bool ret = false;
-    if (a.getType() == 0 && b.getType() == 0) {
-      ret = dynamic_cast<const PathosInt&>(a).getValue() == dynamic_cast<const PathosInt&>(b).getValue();
-    }
-    else if (a.getType() == 1 && b.getType() == 1) {
-      ret = dynamic_cast<const PathosString&>(a).getValue().compare(dynamic_cast<const PathosString&>(b).getValue()) == 0;
-    }
-    else if (a.getType() == 2 && b.getType() == 2) {
-      ret = dynamic_cast<const PathosBoolean&>(a).getValue() == dynamic_cast<const PathosBoolean&>(b).getValue();
-    }
-    return *(new PathosBoolean(ret));
+  else if (closure->count(value) > 0) {
+    //Attempt to dereference from the closure:
+    return closure->at(value);
   }
-  PathosAtom& ifelse(const PathosUninterpreted& cond, const PathosUninterpreted& then, const PathosUninterpreted& other) {
-    cout << "Beginning the if_else.\n";
-    if (dynamic_cast<PathosBoolean&>(cond.eval()).getValue()) {
-      return then.eval();
+  //If none of the above worked, throw an error.
+  else throw 0;
+}
+
+PathosAtom* PathosUninterpretedText::eval() {
+  //Evaluate as normal with an empty map for variables.
+  return eval(new unordered_map<string, PathosAtom*>());
+}
+
+//PathosUninterpretedList
+PathosUninterpretedList::PathosUninterpretedList (ContainerNode* node, unordered_map<string, PathosAtom*>* variables) {
+  closure = variables;
+  parts = node->getParts();
+  size = parts.size();
+}
+
+PathosAtom* PathosUninterpretedList::eval(unordered_map<string, PathosAtom*>* variables) {
+  //Get our parts as a bunch of PathosUninterpreted objects:
+  vector<PathosUninterpreted*> pathosParts = getParts(variables);
+
+  //Get our function by evaling the first part:
+  PathosCallable* function = dynamic_cast<PathosCallable*>(pathosParts[0]->eval());
+
+  //Assemble our arguments from the others:
+  vector<PathosUninterpreted*> args;
+  for (int i = 1; i < size; i += 1) {
+    args.push_back(pathosParts[i]);
+  }
+
+  //Call our function on our arguments:
+  return function->call(args);
+}
+
+PathosAtom* PathosUninterpretedList::eval() {
+  //As above.
+  return eval(new unordered_map<string, PathosAtom*>());
+}   
+
+vector<PathosUninterpreted*> PathosUninterpretedList::getParts(unordered_map<string, PathosAtom*>* variables) {
+  //Construct a new closure from our closure and the new variables.
+  unordered_map<string, PathosAtom*>* newClosure = new unordered_map<string, PathosAtom*>;
+
+  //Loop through our closure keys and add them to the new closure:
+  unordered_map<string, PathosAtom*>::iterator closureEnd = closure->end();
+
+  for (unordered_map<string, PathosAtom*>::iterator i = closure->begin(); i != closureEnd; ++i) {
+    newClosure->operator[](i->first) = i->second;
+  }
+
+  //Loop through our variable keys and add them to the new closure:
+  unordered_map<string, PathosAtom*>::iterator variableEnd = variables->end();
+  for (unordered_map<string, PathosAtom*>::iterator i = variables->begin(); i != variableEnd; ++i) {
+    newClosure->operator[](i->first) =i->second;
+  }
+
+  //Now assemble the new parts:
+  vector<PathosUninterpreted*> rtn;
+  for (int i = 0; i < size; i += 1) {
+    //Instantiate a new PathosUninterpreted object for each node:
+    if (parts[i]->isContainer()) {
+      rtn.push_back(new PathosUninterpretedList(dynamic_cast<ContainerNode*>(parts[i]), newClosure));
     }
     else {
-      return other.eval();
+      string text = dynamic_cast<TextNode*>(parts[i])->getValue();
+      rtn.push_back(new PathosUninterpretedText(text, newClosure));
     }
   }
-};
 
-class PathosNativeFunction : public PathosLambda {
-  private:
-    int which;
-  public:
-    PathosNativeFunction (string name) {
-      if (name.compare("+") == 0) {
-        which = 0;
-      }
-      else if (name.compare("lambda") == 0) {
-        which = 1;
-      }
-      else if (name.compare("car") == 0) {
-        which = 2;
-      }
-      else if (name.compare("cdr") == 0) {
-        which = 3;
-      }
-      else if (name.compare("quote") == 0) {
-        which = 4;
-      }
-      else if (name.compare("=") == 0) {
-        which = 5;
-      }
-      else if (name.compare("if") == 0) {
-        which = 6;
-      }
-      this->type = 8;
+  return rtn;
+}
+vector<Node*> PathosUninterpretedList::getRawParts() {
+  return parts;
+}
+
+//PathosLambda
+PathosLambda::PathosLambda (vector<string> params, PathosUninterpreted* value) {
+  this->value = value;
+  this->params = params;
+  this->argSize = params.size();
+}
+
+PathosAtom* PathosLambda::call(vector<PathosUninterpreted*> args) {
+  //We will construct a map of argument strings to their values:
+  unordered_map<string, PathosAtom*> argMap = *(new unordered_map<string, PathosAtom*>());
+  for (int i = 0; i < argSize; i += 1) {
+    if (params[i][0] == '^') {
+      //An argument name beginning with a carat signifies a request for a uninterpreted Pathos tree.
+      argMap[params[i]] = args[i];
     }
-
-    PathosAtom& run(const vector<PathosUninterpreted>& args) {
-      switch (which) {
-        case 0:
-          return NativeFunctions::add(args[0].eval(), args[1].eval());
-          break;
-        case 1:
-          return NativeFunctions::lambda(args[0], args[1]);
-          break;
-        case 2:
-          return NativeFunctions::car(args[0]);
-          break;
-        case 3:
-          return NativeFunctions::cdr(args[0]);
-          break;
-        case 4:
-          return NativeFunctions::quote(args[0]);
-          break;
-        case 5:
-          return NativeFunctions::equals(args[0], args[1]);
-          break;
-        case 6:
-          return NativeFunctions::ifelse(args[0], args[1], args[2]);
-          break;
-      }
+    else {
+      //Otherwise, immediately evaluate the argument.
+      argMap[params[i]] = args[i]->eval();
     }
-};
+  }
+  //Evaluate our function body with these arguments as extra variables.
+  return value->eval(&argMap);
+}
+//END OF PathosLambda METHODS.
 
-PathosAtom& evaluate(const Node& pathos, const unordered_map<string, PathosAtom*>* variables) {
-  cout << pathos.toString() << '\n';
-  if (pathos.isContainer()) {
-    ContainerNode& container = const_cast<ContainerNode&>(dynamic_cast<const ContainerNode&>(pathos));
-    PathosLambda& function = dynamic_cast<PathosLambda&>(evaluate(*container.parts[0], variables));
+//PathosNativeFunction
+PathosNativeFunction::PathosNativeFunction (int which) {
+  this->which = which;
+}
 
-    vector<PathosUninterpreted> args;
-    int size = container.parts.size();
+PathosAtom* PathosNativeFunction::call(vector<PathosUninterpreted*> args) {
+  return NativeFunctions::call(which, args);
+}
 
-    for (int i = 1; i < size; i += 1) {
-      cout << "Added an arg to " << pathos.toString() << '\n';
-      args.push_back(*(new PathosUninterpreted(*container.parts[i], variables)));
+//NativeFunctions
+//Method to see whether we consider two atoms "equal":
+bool equal(PathosAtom* a, PathosAtom* b) {
+  if (a->getType() == b->getType()) {
+    switch (a->getType()) {
+      case 0:
+        return (dynamic_cast<PathosInt*>(a)->getValue() == dynamic_cast<PathosInt*>(b)->getValue());
+        break;
+      case 1:
+        return (dynamic_cast<PathosString*>(a)->getValue() == dynamic_cast<PathosString*>(b)->getValue());
+        break;
+      case 2:
+        return (dynamic_cast<PathosBoolean*>(a)->getValue() == dynamic_cast<PathosBoolean*>(b)->getValue());
+        break;
+      case 3:
+        {
+          vector<PathosAtom*> first = dynamic_cast<PathosList*>(a)->getValue();
+          vector<PathosAtom*> second = dynamic_cast<PathosList*>(b)->getValue();
+          int size = first.size();
+          if (second.size() != size) {
+            return false;
+          }
+          else {
+            for (int i = 0; i < size; i += 1) {
+              if (!equal(first[i], second[i])) return false;
+            }
+            return true;
+          }
+        }
+        break;
+      default:
+        return a == b;
     }
-    
-    return function.run(args);
+  }
+  return false;
+}
+PathosAtom* NativeFunctions::add(vector<PathosUninterpreted*> args) {
+  return new PathosInt(dynamic_cast<PathosInt*>(args[0]->eval())->getValue() +
+                       dynamic_cast<PathosInt*>(args[1]->eval())->getValue());
+}
+PathosAtom* NativeFunctions::subtract(vector<PathosUninterpreted*> args) {
+  return new PathosInt(dynamic_cast<PathosInt*>(args[0]->eval())->getValue() -
+                       dynamic_cast<PathosInt*>(args[1]->eval())->getValue());
+}
+PathosAtom* NativeFunctions::multiply(vector<PathosUninterpreted*> args) {
+  return new PathosInt(dynamic_cast<PathosInt*>(args[0]->eval())->getValue() *
+                       dynamic_cast<PathosInt*>(args[1]->eval())->getValue());
+}
+PathosAtom* NativeFunctions::divide(vector<PathosUninterpreted*> args) {
+ return new PathosInt(dynamic_cast<PathosInt*>(args[0]->eval())->getValue() /
+                       dynamic_cast<PathosInt*>(args[1]->eval())->getValue());
+}
+PathosAtom* NativeFunctions::quote(vector<PathosUninterpreted*> args) {
+  vector<PathosAtom*> value;
+  int size = args.size();
+  for (int i = 0; i < size; i += 1) {
+    value.push_back(args[i]->eval());
+  }
+  return new PathosList(value);
+}
+PathosAtom* NativeFunctions::lambda(vector<PathosUninterpreted*> args) {
+  vector<string> params;
+  vector<Node*> parts = dynamic_cast<PathosUninterpretedList*>(args[0])->getRawParts();
+  int size = parts.size();
+  for (int i = 0; i < size; i += 1) {
+    params.push_back(dynamic_cast<TextNode*>(parts[i])->getValue());
+  }
+  return new PathosLambda(params, args[1]);
+}
+PathosAtom* NativeFunctions::if_else(vector<PathosUninterpreted*> args) {
+  if (dynamic_cast<PathosBoolean*>(args[0]->eval())->getValue()) {
+    return args[1]->eval();
   }
   else {
-    TextNode& text = const_cast<TextNode&>(dynamic_cast<const TextNode&>(pathos));
-    if (text.value[0] == '\'') {
-      return *(new PathosString(text.value.substr(1,text.value.length())));
-    }
-    else if (text.value[0] == '-' || isdigit(text.value[0])) {
-      return *(new PathosInt(stoi(text.value)));
-    }
-    else if (text.value[0] == '#') {
-      return *(new PathosBoolean(text.value[1] == 't'));
-    }
-    else if (variables->count(text.value) > 0) {
-      return *const_cast<PathosAtom*&>(variables->at(text.value));
-    }
-    else {
-      throw 2;
-    }
+    return args[2]->eval();
+  }
+}
+PathosAtom* NativeFunctions::equals(vector<PathosUninterpreted*> args) {
+  return new PathosBoolean(equal(args[0]->eval(),args[1]->eval()));
+}
+PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) {
+  switch (which) {
+    case 0:
+      return add(args);
+      break;
+    case 1:
+      return subtract(args);
+      break;
+    case 2:
+      return multiply(args);
+      break;
+    case 3:
+      return divide(args);
+      break;
+    case 4:
+      return quote(args);
+      break;
+    case 5:
+      return lambda(args);
+      break;
+    case 6:
+      return if_else(args);
+      break;
+    case 7:
+      return equals(args);
+      break;
   }
 }
 
+//(load)
 string load(string where) {
   ifstream file (where);
   stringstream str;
   str << file.rdbuf();
   return str.str();
-}
-
-int main(int n, char* args[]) {
-  unordered_map<string, PathosAtom*> natives;
-  natives["+"] = new PathosNativeFunction("+");
-  natives["lambda"] = new PathosNativeFunction("lambda");
-  natives["car"] = new PathosNativeFunction("car");
-  natives["cdr"] = new PathosNativeFunction("cdr");
-  natives["quote"] = new PathosNativeFunction("quote");
-  natives["="] = new PathosNativeFunction("=");
-  natives["if"] = new PathosNativeFunction("if");
-  string pathos = load(args[1]);
-  cout << evaluate(parse(pathos), &natives).toString() << '\n';
 }
