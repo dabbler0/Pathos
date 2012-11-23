@@ -93,6 +93,15 @@ ContainerNode* parse(string pathos) {
         last = "";
       }
     }
+    else if (pathos[i] == '\n') {
+      //We will disregard line breaks.
+    }
+    else if (pathos[i] == '/' && pathos[i + 1] == '/') {
+      //Comments are c-like.
+      while (pathos[i] != '\n') {
+        i += 1;
+      }
+    }
     else {
       last += pathos[i];
     }

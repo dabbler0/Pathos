@@ -113,7 +113,7 @@ PathosAtom* PathosUninterpretedText::eval(unordered_map<string, PathosAtom*>* va
     //Attempt to interpret as a boolean literal:
     return new PathosBoolean(value[1] == 't');
   }
-  else if (value[0] == '-' || isdigit(value[0])) {
+  else if (value[0] == '-' && isdigit(value[1]) || isdigit(value[0])) {
     //Attempt to interpret as an int literal:
     return new PathosInt(stoi(value));
   }
