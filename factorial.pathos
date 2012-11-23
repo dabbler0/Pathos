@@ -1,0 +1,16 @@
+//An implementation of the factorial function.
+(
+  (
+    (lambda (f) (f f))
+    (lambda (g)
+      //g is a "generator" function - (g g) will always return the factorial function.
+      (lambda (x)
+        //If x is 0, then x! is 1
+        (if (= x 0) 1
+          //Otherwise, x! is x * (x-1)!. To get the factorial function back to call, we call (g g) to regenerate it.
+          (* x ((g g) (- x 1)))
+        )
+      )
+    )
+  )
+5)
