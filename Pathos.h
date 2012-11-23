@@ -51,6 +51,7 @@ class PathosList : public PathosAtom {
     vector<PathosAtom*> getValue() const;
     PathosAtom* getCar();
     PathosAtom* getCdr();
+    PathosAtom* consTo(PathosAtom*);
     string toString();
 };
 
@@ -117,6 +118,9 @@ namespace NativeFunctions {
   PathosAtom* quote(vector<PathosUninterpreted*>);
   PathosAtom* if_else(vector<PathosUninterpreted*>);
   PathosAtom* equals(vector<PathosUninterpreted*>);
+  PathosAtom* car(vector<PathosUninterpreted*>);
+  PathosAtom* cdr(vector<PathosUninterpreted*>);
+  PathosAtom* cons(vector<PathosUninterpreted*>);
   PathosAtom* call(int, vector<PathosUninterpreted*>);
 }
 

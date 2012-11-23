@@ -80,6 +80,15 @@ PathosAtom* PathosList::getCdr() {
   return new PathosList(rtn);
 }
 
+PathosAtom* PathosList::consTo(PathosAtom* what) {
+  vector<PathosAtom*> rtn;
+  rtn.push_back(what);
+  for (int i = 0; i < size; i += 1) {
+    rtn.push_back(value[i]);
+  }
+  return new PathosList(rtn);
+}
+
 string PathosList::toString() {
   stringstream out;
   out << '[';
@@ -125,8 +134,11 @@ PathosAtom* PathosUninterpretedText::eval(unordered_map<string, PathosAtom*>* va
     //Attempt to dereference from the closure:
     return closure->at(value);
   }
-  //If none of the above worked, throw an error.
-  else throw 0;
+  else {
+    //If none of the above worked, throw an error.
+    cout << "Could not dereference variable " << value << '.' << endl;
+    throw 0;
+  }
 }
 
 PathosAtom* PathosUninterpretedText::eval() {
@@ -313,6 +325,15 @@ PathosAtom* NativeFunctions::if_else(vector<PathosUninterpreted*> args) {
 PathosAtom* NativeFunctions::equals(vector<PathosUninterpreted*> args) {
   return new PathosBoolean(equal(args[0]->eval(),args[1]->eval()));
 }
+PathosAtom* NativeFunctions::car(vector<PathosUninterpreted*> args) {
+  return dynamic_cast<PathosList*>(args[0]->eval())->getCar();
+}
+PathosAtom* NativeFunctions::cdr(vector<PathosUninterpreted*> args) {
+  return dynamic_cast<PathosList*>(args[0]->eval())->getCdr();
+}
+PathosAtom* NativeFunctions::cons(vector<PathosUninterpreted*> args) {
+  return dynamic_cast<PathosList*>(args[1]->eval())->consTo(args[0]->eval());
+}
 PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) {
   switch (which) {
     case 0:
@@ -338,6 +359,12 @@ PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) 
       break;
     case 7:
       return equals(args);
+      break;
+    case 8:
+      return car(args);
+      break;
+    case 9:
+      return cdr(args);
       break;
   }
 }

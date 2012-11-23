@@ -1,0 +1,22 @@
+//An implementaton of a getter for an eelemtn of a list.
+(
+  (
+    (lambda (helper) 
+      //We call the helper function with an initial position of 0.
+      (lambda (list index) (helper list index 0)))
+    (
+      (lambda (f) (f f))
+      (lambda (g)
+        (lambda (list index current)
+          //If we are at the desired index, return the current element
+          (if (= index current) (car list)
+            //Otherwise, move to the next position.
+            ((g g) (cdr list) index (+ current 1))
+          )))
+    )
+  )
+  
+  (quote 'Mabel 'Alice 'Pleasance 'Liddel 'Evans)
+
+  2
+)

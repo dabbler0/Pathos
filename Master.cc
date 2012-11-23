@@ -14,6 +14,8 @@ int main(int n, char* args[]) {
   globals["lambda"] = new PathosNativeFunction(5);
   globals["if"] = new PathosNativeFunction(6);
   globals["="] = new PathosNativeFunction(7);
+  globals["car"] = new PathosNativeFunction(8);
+  globals["cdr"] = new PathosNativeFunction(9);
   ContainerNode* parsed = parse(load(args[1]));
   cout << parsed->toString() << endl;
   PathosAtom* added = (new PathosUninterpretedList(parsed, &globals))->eval();
