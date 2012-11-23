@@ -89,6 +89,10 @@ PathosAtom* PathosList::consTo(PathosAtom* what) {
   return new PathosList(rtn);
 }
 
+bool PathosList::isEmpty() {
+  return size == 0;
+}
+
 string PathosList::toString() {
   stringstream out;
   out << '[';
@@ -334,6 +338,9 @@ PathosAtom* NativeFunctions::cdr(vector<PathosUninterpreted*> args) {
 PathosAtom* NativeFunctions::cons(vector<PathosUninterpreted*> args) {
   return dynamic_cast<PathosList*>(args[1]->eval())->consTo(args[0]->eval());
 }
+PathosAtom* NativeFunctions::empty(vector<PathosUninterpreted*> args) {
+  return new PathosBoolean(dynamic_cast<PathosList*>(args[0]->eval())->isEmpty());
+}
 PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) {
   switch (which) {
     case 0:
@@ -366,6 +373,11 @@ PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) 
     case 9:
       return cdr(args);
       break;
+    case 10:
+      return cons(args);
+      break;
+    case 11:
+      return empty(args);
   }
 }
 

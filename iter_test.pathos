@@ -1,0 +1,15 @@
+//An impelementation of a function to iterate another function over a list.
+(
+  (
+    (lambda (f) (f f))
+    (lambda (g)
+      (lambda (list function)
+        (if (empty list) (quote)
+          (cons (function (car list)) ((g g) (cdr list) function)))
+      ))
+  )
+
+  (quote 1 2 3 4 5)
+
+  (lambda (x) (* 2 x))
+)
