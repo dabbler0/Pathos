@@ -1,4 +1,4 @@
-//An implementaton of a getter for an eelemtn of a list.
+//An implementaton of a getter for an element of a list.
 (
   (
     (lambda (helper) 
