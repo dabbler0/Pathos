@@ -378,6 +378,7 @@ PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) 
       break;
     case 11:
       return empty(args);
+      break;
   }
 }
 
