@@ -28,6 +28,7 @@ ContainerNode::ContainerNode (ContainerNode* parent) {
 }
 
 ContainerNode::ContainerNode () {
+  this->parent = 0;
 }
 
 vector<Node*> ContainerNode::getParts() const {
@@ -39,13 +40,13 @@ void ContainerNode::addPart (Node* node) {
 }
 
 string ContainerNode::toString() const {
-  string rtn = "[";
+  string rtn = "(";
   int len = parts.size();
   for (int i = 0; i < len; i += 1) {
     rtn += parts[i]->toString();
     if (i != len - 1) rtn += ' ';
   }
-  rtn += "]";
+  rtn += ")";
   return rtn;
 }
 
@@ -102,9 +103,22 @@ ContainerNode* parse(string pathos) {
         i += 1;
       }
     }
+    else if (pathos[i] == '\\') {
+      //Backslash is a universal escape character.
+      i += 1;
+      last += pathos[i];
+    }
     else {
       last += pathos[i];
     }
   }
   return dynamic_cast<ContainerNode*>(current->getParts()[0]);
+}
+
+//Load.
+string load(string where) {
+  ifstream file (where);
+  stringstream str;
+  str << file.rdbuf();
+  return str.str();
 }

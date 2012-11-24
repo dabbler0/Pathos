@@ -39,4 +39,5 @@ class TextNode : public Node {
 };
 
 ContainerNode* parse(string);
+string load(string);
 #endif

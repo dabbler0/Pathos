@@ -18,8 +18,8 @@ int main(int n, char* args[]) {
   globals["cdr"] = new PathosNativeFunction(9);
   globals["cons"] = new PathosNativeFunction(10);
   globals["empty"] = new PathosNativeFunction(11);
-  ContainerNode* parsed = parse(load(args[1]));
-  cout << parsed->toString() << endl;
-  PathosAtom* added = (new PathosUninterpretedList(parsed, &globals))->eval();
-  cout << added->toString() << endl;
+  globals["append"] = new PathosNativeFunction(12);
+  globals["get"] = new PathosNativeFunction(13);
+  globals["log"] = new PathosNativeFunction(14);
+  cout << (new PathosUninterpretedList(parse(load(args[1])), &globals))->eval()->toString() << endl;
 }
