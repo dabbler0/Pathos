@@ -71,7 +71,6 @@
   )
 
   //Example starting memory:
-  (quote #t #t #t)
-  (quote)
+  (quote #t #t #t #t #t #t #t #t #t)
+  (quote #f #f)
 )
-

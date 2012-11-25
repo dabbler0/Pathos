@@ -9,11 +9,12 @@ class ContainerNode;
 class Node {
   protected:
     ContainerNode* parent;
-
+    bool root;
   public:
     ContainerNode* consummate();
     virtual string toString() const;
     virtual bool isContainer() const;
+    bool isRoot() const;
 };
 
 class ContainerNode : public Node {
@@ -38,6 +39,8 @@ class TextNode : public Node {
     bool isContainer() const;
 };
 
-ContainerNode* parse(string);
-string load(string);
+namespace ParserFunctions {
+  Node* parse(string);
+  string load(string);
+}
 #endif

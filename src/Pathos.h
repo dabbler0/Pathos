@@ -127,7 +127,11 @@ namespace NativeFunctions {
   PathosAtom* get(vector<PathosUninterpreted*>);
   PathosAtom* empty(vector<PathosUninterpreted*>);
   PathosAtom* log(vector<PathosUninterpreted*>);
+  PathosAtom* std_in(vector<PathosUninterpreted*>);
+  PathosAtom* load(vector<PathosUninterpreted*>);
+  PathosAtom* import(vector<PathosUninterpreted*>);
   PathosAtom* call(int, vector<PathosUninterpreted*>);
+  unordered_map<string, PathosAtom*>* getStandardGlobals();
 }
 
 #endif

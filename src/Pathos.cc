@@ -323,7 +323,7 @@ bool equal(PathosAtom* a, PathosAtom* b) {
 
 inline void assertArgs(const vector<PathosUninterpreted*>& args, int size, string name) {
   if (args.size() != size) {
-    cout << name << " takes " << size << " arguments, but was given " << args.size() << '.';
+    cout << name << " takes " << size << " arguments, but was given " << args.size() << '.' << endl;
     throw 1;
   }
 }
@@ -408,6 +408,41 @@ PathosAtom* NativeFunctions::log(vector<PathosUninterpreted*> args) {
   cout << args[0]->eval()->toString() << endl;
   return args[1]->eval();
 }
+PathosAtom* NativeFunctions::std_in(vector<PathosUninterpreted*> args) {
+  assertArgs(args, 0, "stdin");
+  string in;
+  getline(cin, in);
+  Node* parsed = ParserFunctions::parse(in);
+  PathosUninterpreted* uninterpreted;
+  if (parsed->isContainer()) {
+    uninterpreted = new PathosUninterpretedList(dynamic_cast<ContainerNode*>(parsed), getStandardGlobals());
+  }
+  else {
+    uninterpreted = new PathosUninterpretedText(dynamic_cast<TextNode*>(parsed)->getValue(), getStandardGlobals());
+  }
+  PathosAtom* rtn = uninterpreted->eval();
+  //delete uninterpreted
+  return rtn;
+}
+PathosAtom* NativeFunctions::import(vector<PathosUninterpreted*> args) {
+  assertArgs(args, 1, "import");
+  string in = ParserFunctions::load(dynamic_cast<PathosString*>(args[0]->eval())->getValue() + ".pathos");
+  Node* parsed = ParserFunctions::parse(in);
+  PathosUninterpreted* uninterpreted;
+  if (parsed->isContainer()) {
+    uninterpreted = new PathosUninterpretedList(dynamic_cast<ContainerNode*>(parsed), getStandardGlobals());
+  }
+  else {
+    uninterpreted = new PathosUninterpretedText(dynamic_cast<TextNode*>(parsed)->getValue(), getStandardGlobals());
+  }
+  PathosAtom* rtn = uninterpreted->eval();
+  //delete uninterpreted;
+  return rtn;
+}
+PathosAtom* NativeFunctions::load(vector<PathosUninterpreted*> args) {
+  assertArgs(args, 1, "load");
+  return new PathosString(ParserFunctions::load(dynamic_cast<PathosString*>(args[1]->eval())->getValue()));
+}
 PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) {
   switch (which) {
     case 0:
@@ -455,7 +490,36 @@ PathosAtom* NativeFunctions::call(int which, vector<PathosUninterpreted*> args) 
     case 14:
       return log(args);
       break;
+    case 15:
+      return std_in(args);
+      break;
+    case 16:
+      return import(args);
+      break;
+    case 17:
+      return load(args);
+      break;
   }
 }
-
-
+unordered_map<string, PathosAtom*>* NativeFunctions::getStandardGlobals() {
+  unordered_map<string, PathosAtom*>* globals = new unordered_map<string, PathosAtom*>();
+  globals->operator[]("+") = new PathosNativeFunction(0);
+  globals->operator[]("-") = new PathosNativeFunction(1);
+  globals->operator[]("*") = new PathosNativeFunction(2);
+  globals->operator[]("/") = new PathosNativeFunction(3);
+  globals->operator[]("quote") = new PathosNativeFunction(4);
+  globals->operator[]("lambda") = new PathosNativeFunction(5);
+  globals->operator[]("if") = new PathosNativeFunction(6);
+  globals->operator[]("=") = new PathosNativeFunction(7);
+  globals->operator[]("car") = new PathosNativeFunction(8);
+  globals->operator[]("cdr") = new PathosNativeFunction(9);
+  globals->operator[]("cons") = new PathosNativeFunction(10);
+  globals->operator[]("empty") = new PathosNativeFunction(11);
+  globals->operator[]("append") = new PathosNativeFunction(12);
+  globals->operator[]("get") = new PathosNativeFunction(13);
+  globals->operator[]("log") = new PathosNativeFunction(14);
+  globals->operator[]("stdin") = new PathosNativeFunction(15);
+  globals->operator[]("import") = new PathosNativeFunction(16);
+  globals->operator[]("load") = new PathosNativeFunction(17);
+  return globals;
+}

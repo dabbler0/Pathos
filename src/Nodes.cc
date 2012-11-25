@@ -17,6 +17,10 @@ bool Node::isContainer() const {
   return false;
 }
 
+bool Node::isRoot() const {
+  return root;
+}
+
 ContainerNode* Node::consummate() {
   parent->addPart(this);
   return parent;
@@ -25,10 +29,12 @@ ContainerNode* Node::consummate() {
 //ContainerNode
 ContainerNode::ContainerNode (ContainerNode* parent) {
   this->parent = parent;
+  this->root = false;
 }
 
 ContainerNode::ContainerNode () {
   this->parent = 0;
+  this->root = true;
 }
 
 vector<Node*> ContainerNode::getParts() const {
@@ -58,6 +64,7 @@ bool ContainerNode::isContainer() const {
 TextNode::TextNode (ContainerNode* parent, string value) {
   this->parent = parent;
   this->value = value;
+  this->root = false;
 }
 
 string TextNode::getValue() const {
@@ -73,7 +80,7 @@ bool TextNode::isContainer() const {
 }
 
 //Parse.
-ContainerNode* parse(string pathos) {
+Node* ParserFunctions::parse(string pathos) {
   int len = pathos.length();
   ContainerNode* current = new ContainerNode();
   string last = "";
@@ -85,6 +92,10 @@ ContainerNode* parse(string pathos) {
       if (last.length() > 0) {
         current->addPart(new TextNode(current, last));
         last = "";
+      }
+      if (current->isRoot()) {
+        cout << "Mismatched parenthesis." << endl;
+        throw 4;
       }
       current = current->consummate();
     }
@@ -112,11 +123,14 @@ ContainerNode* parse(string pathos) {
       last += pathos[i];
     }
   }
-  return dynamic_cast<ContainerNode*>(current->getParts()[0]);
+  
+  if (last.length() > 0) current->addPart(new TextNode(current, last));
+
+  return current->getParts()[0];
 }
 
 //Load.
-string load(string where) {
+string ParserFunctions::load(string where) {
   ifstream file (where);
   stringstream str;
   str << file.rdbuf();
