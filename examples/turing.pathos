@@ -1,3 +1,4 @@
+#!/usr/bin/env /home/anthony/Projects/Pathos/pathos
 //To show that Pathos is Turing-complete.
 //This is a general-purpose UTM emulator. An example turing machine to run it on is at copy.turing.pathos.
 

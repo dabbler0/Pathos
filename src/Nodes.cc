@@ -84,7 +84,14 @@ Node* ParserFunctions::parse(string pathos) {
   int len = pathos.length();
   ContainerNode* current = new ContainerNode();
   string last = "";
-  for (int i = 0; i < len; i += 1) {
+  int x = 0;
+  if (pathos[0] == '#' && pathos[1] == '!') {
+    //If there is an interpreter line, ignore it.
+    while (pathos[x] != '\n') {
+      x += 1;
+    }
+  }
+  for (int i = x; i < len; i += 1) {
     if (pathos[i] == '(') {
       current = new ContainerNode(current);
     }
