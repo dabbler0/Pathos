@@ -186,6 +186,11 @@ PathosAtom* PathosUninterpretedList::eval(unordered_map<string, PathosAtom*>* va
   //Get our function by evaling the first part:
   PathosCallable* function = dynamic_cast<PathosCallable*>(pathosParts[0]->eval());
 
+  if (function == 0) {
+    cout << pathosParts[0]->eval()->toString() << " is not callable." << endl;
+    throw 5;
+  }
+
   //Assemble our arguments from the others:
   vector<PathosUninterpreted*> args;
   for (int i = 1; i < size; i += 1) {
@@ -426,7 +431,7 @@ PathosAtom* NativeFunctions::std_in(vector<PathosUninterpreted*> args) {
 }
 PathosAtom* NativeFunctions::import(vector<PathosUninterpreted*> args) {
   assertArgs(args, 1, "import");
-  string in = ParserFunctions::load(dynamic_cast<PathosString*>(args[0]->eval())->getValue() + ".pathos");
+  string in = ParserFunctions::load(dynamic_cast<PathosString*>(args[0]->eval())->getValue());
   Node* parsed = ParserFunctions::parse(in);
   PathosUninterpreted* uninterpreted;
   if (parsed->isContainer()) {
@@ -522,4 +527,17 @@ unordered_map<string, PathosAtom*>* NativeFunctions::getStandardGlobals() {
   globals->operator[]("import") = new PathosNativeFunction(16);
   globals->operator[]("load") = new PathosNativeFunction(17);
   return globals;
+}
+
+//Pathos
+PathosAtom* Pathos::interpret(string pathos) {
+  Node* parsed = ParserFunctions::parse(pathos);
+  PathosUninterpreted* uninterpreted;
+  if (parsed->isContainer()) {
+    uninterpreted = new PathosUninterpretedList(dynamic_cast<ContainerNode*>(parsed), NativeFunctions::getStandardGlobals());
+  }
+  else {
+    uninterpreted = new PathosUninterpretedText(dynamic_cast<TextNode*>(parsed)->getValue(), NativeFunctions::getStandardGlobals());
+  }
+  return uninterpreted->eval();
 }

@@ -134,4 +134,8 @@ namespace NativeFunctions {
   unordered_map<string, PathosAtom*>* getStandardGlobals();
 }
 
+namespace Pathos {
+  PathosAtom* interpret(string pathos);
+}
+
 #endif
